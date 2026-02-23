@@ -1,0 +1,209 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { PaintingImage } from "./painting-image"
+import { ScrollReveal } from "./scroll-reveal"
+import { PaintingModal } from "./painting-modal"
+import { PAINTING_CATEGORIES, type PaintingRow } from "@/lib/painting-types"
+
+const categories = ["all", ...PAINTING_CATEGORIES] as const
+
+export function Gallery() {
+  const [activeCategory, setActiveCategory] = useState<string>("all")
+  const [selectedPainting, setSelectedPainting] = useState<PaintingRow | null>(null)
+  const [paintings, setPaintings] = useState<PaintingRow[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch("/api/paintings")
+      .then((r) => r.json())
+      .then((data) => {
+        setPaintings(data)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
+
+  const filteredPaintings =
+    activeCategory === "all"
+      ? paintings
+      : paintings.filter((p) => p.category === activeCategory)
+
+  return (
+    <>
+      <section id="gallery" className="py-24 md:py-32 px-6 md:px-12">
+        <ScrollReveal>
+          <div className="max-w-7xl mx-auto">
+            {/* Section Header */}
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-16">
+              <div>
+                <p className="text-sm tracking-[0.3em] uppercase text-muted-foreground mb-4">
+                  Collection
+                </p>
+                <h2 className="font-serif text-4xl md:text-6xl lg:text-7xl text-foreground leading-[0.95] tracking-tight">
+                  Selected
+                  <br />
+                  <span className="italic">Works</span>
+                </h2>
+              </div>
+
+              {/* Filter */}
+              <div className="flex flex-wrap gap-2">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-4 py-2 text-xs tracking-[0.2em] uppercase transition-all duration-300 border ${
+                      activeCategory === cat
+                        ? "bg-foreground text-background border-foreground"
+                        : "bg-transparent text-muted-foreground border-border hover:border-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {cat === "all"
+                      ? "All"
+                      : `${cat.charAt(0).toUpperCase() + cat.slice(1)} Series`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Loading Skeleton */}
+            {loading && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className={`${i === 0 ? "md:col-span-2" : ""}`}>
+                    <div className={`bg-muted animate-pulse ${i === 0 ? "aspect-[21/9]" : "aspect-[4/5]"}`} />
+                    <div className="py-4 flex justify-between">
+                      <div>
+                        <div className="h-5 w-32 bg-muted animate-pulse" />
+                        <div className="h-3 w-24 bg-muted animate-pulse mt-2" />
+                      </div>
+                      <div className="h-8 w-8 bg-muted animate-pulse rounded-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Gallery Grid */}
+            {!loading && (
+              <motion.div
+                layout
+                className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8"
+              >
+                <AnimatePresence mode="popLayout">
+                  {filteredPaintings.map((painting, index) => (
+                    <motion.div
+                      key={painting.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{
+                        duration: 0.5,
+                        delay: index * 0.08,
+                        layout: { duration: 0.4 },
+                      }}
+                      className={`${index === 0 || index === 5 ? "md:col-span-2" : ""}`}
+                    >
+                      <button
+                        onClick={() => setSelectedPainting(painting)}
+                        className="painting-card group relative w-full overflow-hidden cursor-pointer text-left"
+                      >
+                        <div
+                          className={`relative ${
+                            index === 0 || index === 5
+                              ? "aspect-[21/9]"
+                              : "aspect-[4/5]"
+                          } overflow-hidden`}
+                        >
+                          <PaintingImage
+                            src={painting.image || "/placeholder.svg"}
+                            alt={painting.title}
+                            fill
+                            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 50vw"
+                          />
+
+                          {/* Hover overlay content */}
+                          <div className="absolute inset-0 z-10 flex flex-col justify-end p-6 md:p-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                            <p className="text-sm tracking-[0.2em] uppercase text-background/70 mb-2">
+                              {painting.medium}
+                            </p>
+                            <h3 className="font-serif text-2xl md:text-3xl text-background">
+                              {painting.title}
+                            </h3>
+                            <div className="flex items-center gap-4 mt-3">
+                              <span className="text-sm text-background/70">
+                                {painting.year}
+                              </span>
+                              <span className="w-8 h-px bg-background/40" />
+                              {painting.sold ? (
+                                <span className="text-xs tracking-[0.2em] uppercase text-background/50">
+                                  Sold
+                                </span>
+                              ) : (
+                                <span className="text-sm text-background/90">
+                                  ${painting.price.toLocaleString()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Sold badge */}
+                          {painting.sold ? (
+                            <div className="absolute top-4 right-4 z-10 bg-foreground/90 text-background text-xs tracking-[0.2em] uppercase px-3 py-1.5">
+                              Sold
+                            </div>
+                          ) : null}
+                        </div>
+
+                        {/* Card footer */}
+                        <div className="flex items-center justify-between py-4">
+                          <div>
+                            <h3 className="font-serif text-lg text-foreground">
+                              {painting.title}
+                            </h3>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {painting.dimensions} &middot; {painting.year}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {!painting.sold && (
+                              <span className="text-sm text-foreground">
+                                ${painting.price.toLocaleString()}
+                              </span>
+                            )}
+                            <span className="w-8 h-8 flex items-center justify-center border border-border rounded-full group-hover:bg-foreground group-hover:text-background transition-all duration-300">
+                              <svg
+                                width="12"
+                                height="12"
+                                viewBox="0 0 12 12"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                              >
+                                <path d="M1 11L11 1M11 1H3M11 1V9" />
+                              </svg>
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </motion.div>
+            )}
+          </div>
+        </ScrollReveal>
+      </section>
+
+      {/* Painting Modal */}
+      <PaintingModal
+        painting={selectedPainting}
+        onClose={() => setSelectedPainting(null)}
+      />
+    </>
+  )
+}
