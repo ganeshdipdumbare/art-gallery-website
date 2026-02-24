@@ -32,32 +32,32 @@ export function Gallery() {
 
   return (
     <>
-      <section id="gallery" className="py-24 md:py-32 px-6 md:px-12">
+      <section id="gallery" className="py-16 sm:py-24 md:py-32 px-4 sm:px-6 md:px-12 w-full">
         <ScrollReveal>
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto w-full min-w-0">
             {/* Section Header */}
-            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-16">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-8 mb-12 md:mb-16">
               <div>
-                <p className="text-sm tracking-[0.3em] uppercase text-muted-foreground mb-4">
+                <p className="text-xs sm:text-sm tracking-[0.35em] uppercase text-muted-foreground mb-4 font-medium">
                   Collection
                 </p>
-                <h2 className="font-serif text-4xl md:text-6xl lg:text-7xl text-foreground leading-[0.95] tracking-tight">
+                <h2 className="font-serif text-3xl sm:text-4xl md:text-6xl lg:text-7xl text-foreground leading-[0.95] tracking-tight">
                   Selected
                   <br />
                   <span className="italic">Works</span>
                 </h2>
               </div>
 
-              {/* Filter */}
-              <div className="flex flex-wrap gap-2">
+              {/* Filter - scrollable on mobile */}
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 scrollbar-hide md:overflow-visible md:flex-wrap md:mx-0 md:pb-0">
                 {categories.map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
-                    className={`px-4 py-2 text-xs tracking-[0.2em] uppercase transition-all duration-300 border ${
+                    className={`px-4 py-2.5 text-xs tracking-[0.2em] uppercase transition-all duration-300 border flex-shrink-0 ${
                       activeCategory === cat
                         ? "bg-foreground text-background border-foreground"
-                        : "bg-transparent text-muted-foreground border-border hover:border-foreground hover:text-foreground"
+                        : "bg-transparent text-muted-foreground border-border hover:border-foreground hover:text-foreground hover:bg-muted/50"
                     }`}
                   >
                     {cat === "all"
@@ -109,10 +109,10 @@ export function Gallery() {
                     >
                       <button
                         onClick={() => setSelectedPainting(painting)}
-                        className="painting-card group relative w-full overflow-hidden cursor-pointer text-left"
+                        className="painting-card group relative w-full overflow-hidden cursor-pointer text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
                       >
                         <div
-                          className={`relative ${
+                          className={`painting-frame relative ${
                             index === 0 || index === 5
                               ? "aspect-[21/9]"
                               : "aspect-[4/5]"
@@ -175,7 +175,7 @@ export function Gallery() {
                                 ${painting.price.toLocaleString()}
                               </span>
                             )}
-                            <span className="w-8 h-8 flex items-center justify-center border border-border rounded-full group-hover:bg-foreground group-hover:text-background transition-all duration-300">
+                            <span className="w-8 h-8 flex items-center justify-center border-2 border-border rounded-full group-hover:bg-foreground group-hover:border-foreground group-hover:text-background transition-all duration-500 ease-out">
                               <svg
                                 width="12"
                                 height="12"

@@ -36,7 +36,7 @@ export function Navigation() {
             : "bg-transparent"
         }`}
       >
-        <nav className="flex items-center justify-between px-6 md:px-12 py-5">
+        <nav className="flex items-center justify-between px-4 sm:px-6 md:px-12 py-5 w-full max-w-[100vw]">
           <a
             href="#"
             className="font-serif text-xl md:text-2xl tracking-tight text-foreground"
@@ -50,7 +50,7 @@ export function Navigation() {
                 <a
                   key={link.href}
                   href={link.href}
-                  className="text-sm tracking-widest uppercase text-muted-foreground hover:text-foreground transition-colors duration-300"
+                  className="text-sm tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-300"
                 >
                   {link.label}
                 </a>
@@ -96,7 +96,7 @@ export function Navigation() {
             transition={{ duration: 0.3 }}
             className="fixed inset-0 z-50 bg-background"
           >
-            <div className="flex items-center justify-between px-6 py-5">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-5">
               <span className="font-serif text-xl text-foreground">
                 Ursula Ushiko
               </span>
