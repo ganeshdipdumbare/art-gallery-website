@@ -11,7 +11,7 @@ import { CartDrawer } from "@/components/cart-drawer"
 export default function Home() {
   return (
     <CartProvider>
-      <main>
+      <main className="w-full min-w-0 flex flex-col">
         <Navigation />
         <Hero />
         <MarqueeBanner />

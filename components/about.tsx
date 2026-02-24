@@ -5,8 +5,8 @@ import { ScrollReveal } from "./scroll-reveal"
 
 export function About() {
   return (
-    <section id="about" className="py-24 md:py-32 bg-secondary">
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
+    <section id="about" className="py-16 sm:py-24 md:py-32 bg-secondary w-full">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 w-full min-w-0">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Image */}
           <ScrollReveal direction="left">
@@ -19,10 +19,19 @@ export function About() {
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                 />
+                {/* Subtle inner frame */}
+                <div
+                  className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-white/20"
+                  aria-hidden="true"
+                />
               </div>
-              {/* Decorative frame offset */}
+              {/* Artistic offset frame — double border for gallery feel */}
               <div
-                className="absolute -bottom-4 -right-4 w-full h-full border border-accent -z-10"
+                className="absolute -bottom-5 -right-5 w-full h-full border-2 border-accent/60 -z-10"
+                aria-hidden="true"
+              />
+              <div
+                className="absolute -bottom-7 -right-7 w-full h-full border border-accent/30 -z-10"
                 aria-hidden="true"
               />
             </div>
@@ -31,16 +40,16 @@ export function About() {
           {/* Text */}
           <ScrollReveal direction="right" delay={0.2}>
             <div>
-              <p className="text-sm tracking-[0.3em] uppercase text-muted-foreground mb-4">
+              <p className="text-xs sm:text-sm tracking-[0.35em] uppercase text-muted-foreground mb-4 font-medium">
                 About the Artist
               </p>
-              <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl text-foreground leading-[0.95] tracking-tight mb-8">
+              <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-foreground leading-[0.95] tracking-tight mb-6 md:mb-8">
                 Every brushstroke
                 <br />
                 <span className="italic">tells a story</span>
               </h2>
 
-              <div className="space-y-5 text-muted-foreground leading-relaxed">
+              <div className="space-y-5 text-muted-foreground leading-[1.75]">
                 <p>
                   Thank you for visiting my gallery. After having studied Interior
                   Design + Architecture in Germany and Egypt, I worked at my own
@@ -65,7 +74,7 @@ export function About() {
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-8 mt-12 pt-8 border-t border-border">
+              <div className="grid grid-cols-3 gap-4 sm:gap-8 mt-12 pt-8 border-t border-border">
                 <div>
                   <p className="font-serif text-3xl md:text-4xl text-foreground">
                     25+

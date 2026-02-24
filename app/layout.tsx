@@ -39,7 +39,10 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#f5efe6',
+  themeColor: '#f7f3ed',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
 }
 
 export default function RootLayout({
@@ -49,9 +52,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${playfair.variable} ${inter.variable}`}>
-      <body className="font-sans antialiased overflow-x-hidden">
+      <body className="font-sans antialiased overflow-x-hidden min-w-0 w-full">
         <div className="noise-overlay" aria-hidden="true" />
-        {children}
+        <div className="min-w-0 w-full">
+          {children}
+        </div>
         <Analytics />
       </body>
     </html>
