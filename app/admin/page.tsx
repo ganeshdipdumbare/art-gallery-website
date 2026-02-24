@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Pencil, Trash2, LogOut, GripVertical, Eye } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Plus, Pencil, Trash2, LogOut, GripVertical, Eye, Palette } from "lucide-react"
 import { PaintingImage } from "@/components/painting-image"
 import type { PaintingCategory, PaintingRow } from "@/lib/painting-types"
 
@@ -120,38 +121,62 @@ export default function AdminPage() {
   if (isAuthenticated === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-sm text-muted-foreground">Loading...</div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex flex-col items-center gap-4"
+        >
+          <Palette className="w-8 h-8 text-muted-foreground/60 animate-pulse" />
+          <p className="text-sm tracking-[0.2em] uppercase text-muted-foreground">Loading...</p>
+        </motion.div>
       </div>
     )
   }
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Admin Header */}
-      <header className="border-b border-border px-6 md:px-12 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="font-serif text-xl text-foreground">Gallery Admin</h1>
-          <a
-            href="/"
-            target="_blank"
-            className="flex items-center gap-1.5 text-xs tracking-wider uppercase text-muted-foreground hover:text-foreground transition-colors"
+      {/* Admin Header — matches main site nav styling */}
+      <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-12 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <h1 className="font-serif text-xl md:text-2xl text-foreground tracking-tight">
+              Gallery Admin
+            </h1>
+            <a
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-xs tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-300"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              View Site
+            </a>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-xs tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-300"
           >
-            <Eye className="w-3.5 h-3.5" />
-            View Site
-          </a>
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
         </div>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 text-xs tracking-wider uppercase text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <LogOut className="w-4 h-4" />
-          Logout
-        </button>
       </header>
 
-      <div className="max-w-6xl mx-auto px-6 md:px-12 py-8">
+      {/* Main content */}
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 md:px-12 py-8 md:py-12">
+        {/* Ambient accent */}
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-accent/5 blur-[100px] pointer-events-none -z-10" aria-hidden="true" />
+
+        {/* Section header */}
+        <div className="mb-10">
+          <p className="text-xs tracking-[0.35em] uppercase text-muted-foreground font-medium mb-2">
+            Collection
+          </p>
+          <div className="artistic-divider w-16 mb-8" />
+        </div>
+
         {/* Toolbar */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <p className="text-sm text-muted-foreground">
             {paintings.length} painting{paintings.length !== 1 ? "s" : ""} in gallery
           </p>
@@ -160,7 +185,7 @@ export default function AdminPage() {
               setEditingPainting(emptyForm)
               setIsCreating(true)
             }}
-            className="flex items-center gap-2 px-5 py-2.5 bg-foreground text-background text-xs tracking-wider uppercase hover:opacity-90 transition-opacity"
+            className="btn-artistic flex items-center justify-center gap-2 px-6 py-3 bg-foreground text-background text-xs tracking-[0.2em] uppercase font-medium w-full sm:w-auto"
           >
             <Plus className="w-4 h-4" />
             Add Painting
@@ -168,86 +193,120 @@ export default function AdminPage() {
         </div>
 
         {/* Paintings List */}
-        <div className="flex flex-col gap-3">
-          {paintings.map((p) => (
-            <div
-              key={p.id}
-              className="flex items-center gap-4 p-4 border border-border hover:border-foreground/20 transition-colors group"
+        <div className="flex flex-col gap-4">
+          {paintings.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center justify-center py-16 md:py-24 text-center border-2 border-dashed border-border"
             >
-              <GripVertical className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
-              <div className="relative w-16 h-20 flex-shrink-0 overflow-hidden bg-muted">
-                {p.image ? (
-                  <PaintingImage
-                    src={p.image}
-                    alt={p.title}
-                    fill
-                    className="object-cover"
-                    sizes="64px"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-xs">
-                    No image
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-serif text-sm text-foreground truncate">{p.title}</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {p.reference_id && (
-                    <span className="font-mono">{p.reference_id} &middot; </span>
+              <Palette className="w-12 h-12 text-muted-foreground/40 mb-4" />
+              <p className="font-serif text-lg text-foreground mb-2">No paintings yet</p>
+              <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+                Add your first piece to start building your collection.
+              </p>
+              <button
+                onClick={() => {
+                  setEditingPainting(emptyForm)
+                  setIsCreating(true)
+                }}
+                className="btn-artistic flex items-center gap-2 px-6 py-3 bg-foreground text-background text-xs tracking-[0.2em] uppercase font-medium"
+              >
+                <Plus className="w-4 h-4" />
+                Add Painting
+              </button>
+            </motion.div>
+          ) : (
+          <AnimatePresence mode="popLayout">
+            {paintings.map((p, i) => (
+              <motion.div
+                key={p.id}
+                layout
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3, delay: i * 0.03 }}
+                className="flex items-center gap-4 p-5 md:p-6 bg-secondary/30 border-2 border-border hover:border-accent/30 transition-all duration-300 group"
+              >
+                <GripVertical className="w-4 h-4 text-muted-foreground/30 flex-shrink-0 group-hover:text-muted-foreground/60 transition-colors" />
+                <div className="relative w-20 h-24 flex-shrink-0 overflow-hidden bg-muted ring-1 ring-black/5">
+                  {p.image ? (
+                    <PaintingImage
+                      src={p.image}
+                      alt={p.title}
+                      fill
+                      className="object-cover"
+                      sizes="80px"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-xs">
+                      No image
+                    </div>
                   )}
-                  {p.medium} &middot; {p.dimensions} &middot; {p.year}
-                </p>
-              </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
-                {p.sold ? (
-                  <span className="text-xs tracking-wider uppercase text-muted-foreground bg-muted px-2 py-1">
-                    Sold
-                  </span>
-                ) : (
-                  <span className="text-sm text-foreground tabular-nums">
-                    ${p.price.toLocaleString()}
-                  </span>
-                )}
-                <button
-                  onClick={() =>
-                    setEditingPainting({
-                      id: p.id,
-                      reference_id: p.reference_id,
-                      title: p.title,
-                      year: p.year,
-                      medium: p.medium,
-                      dimensions: p.dimensions,
-                      price: p.price,
-                      description: p.description,
-                      image: p.image,
-                      image_framed: p.image_framed,
-                      category: p.category as PaintingForm["category"],
-                      sold: !!p.sold,
-                      sort_order: p.sort_order,
-                    })
-                  }
-                  className="w-8 h-8 flex items-center justify-center border border-border text-muted-foreground hover:bg-foreground hover:text-background hover:border-foreground transition-all"
-                  aria-label={`Edit ${p.title}`}
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => handleDelete(p.id)}
-                  className="w-8 h-8 flex items-center justify-center border border-border text-muted-foreground hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all"
-                  aria-label={`Delete ${p.title}`}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          ))}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-serif text-base md:text-lg text-foreground truncate">
+                    {p.title}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {p.reference_id && (
+                      <span className="font-mono">{p.reference_id} · </span>
+                    )}
+                    {p.medium} · {p.dimensions} · {p.year}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  {p.sold ? (
+                    <span className="text-xs tracking-[0.2em] uppercase text-muted-foreground bg-muted px-3 py-1.5">
+                      Sold
+                    </span>
+                  ) : (
+                    <span className="text-sm font-medium text-foreground tabular-nums">
+                      ${p.price.toLocaleString()}
+                    </span>
+                  )}
+                  <button
+                    onClick={() =>
+                      setEditingPainting({
+                        id: p.id,
+                        reference_id: p.reference_id,
+                        title: p.title,
+                        year: p.year,
+                        medium: p.medium,
+                        dimensions: p.dimensions,
+                        price: p.price,
+                        description: p.description,
+                        image: p.image,
+                        image_framed: p.image_framed,
+                        category: p.category as PaintingForm["category"],
+                        sold: !!p.sold,
+                        sort_order: p.sort_order,
+                      })
+                    }
+                    className="w-9 h-9 flex items-center justify-center border-2 border-border text-muted-foreground hover:bg-foreground hover:text-background hover:border-foreground transition-all duration-300"
+                    aria-label={`Edit ${p.title}`}
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(p.id)}
+                    className="w-9 h-9 flex items-center justify-center border-2 border-border text-muted-foreground hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all duration-300"
+                    aria-label={`Delete ${p.title}`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          )}
         </div>
       </div>
 
       {/* Edit/Create Modal */}
-      {editingPainting && (
-        <PaintingFormModal
+      <AnimatePresence>
+        {editingPainting && (
+          <PaintingFormModal
           painting={editingPainting}
           isCreating={isCreating}
           saving={saving}
@@ -257,7 +316,8 @@ export default function AdminPage() {
             setIsCreating(false)
           }}
         />
-      )}
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -281,56 +341,69 @@ function PaintingFormModal({
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
+  const inputClass =
+    "w-full px-4 py-3.5 bg-secondary/50 border-2 border-border text-foreground text-sm focus:border-accent focus:outline-none transition-colors duration-300 placeholder:text-muted-foreground/50"
+  const labelClass = "block text-xs tracking-[0.25em] uppercase text-muted-foreground mb-2 font-medium"
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" />
-      <div
-        className="relative bg-background w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 border border-border"
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-foreground/50 backdrop-blur-sm" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.98 }}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        className="relative bg-background w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 md:p-10 border-2 border-border shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="font-serif text-2xl text-foreground mb-6">
-          {isCreating ? "Add New Painting" : "Edit Painting"}
+        <p className="text-xs tracking-[0.35em] uppercase text-muted-foreground font-medium mb-2">
+          {isCreating ? "New Painting" : "Edit Painting"}
+        </p>
+        <h2 className="font-serif text-2xl md:text-3xl text-foreground mb-2">
+          {isCreating ? "Add to Collection" : form.title || "Untitled"}
         </h2>
+        <div className="artistic-divider w-16 mb-8" />
 
         {!isCreating && painting.reference_id && (
-          <p className="text-xs text-muted-foreground mb-4 font-mono">
-            Reference ID: {painting.reference_id}
+          <p className="text-xs text-muted-foreground mb-6 font-mono">
+            Ref: {painting.reference_id}
           </p>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="md:col-span-2">
-            <label className="block text-xs tracking-[0.2em] uppercase text-muted-foreground mb-2">
-              Title
-            </label>
+            <label className={labelClass}>Title</label>
             <input
               type="text"
               value={form.title}
               onChange={(e) => update("title", e.target.value)}
-              className="w-full px-4 py-3 bg-transparent border border-border text-foreground text-sm focus:border-foreground focus:outline-none transition-colors"
+              className={inputClass}
+              placeholder="Painting title"
             />
           </div>
 
           <div>
-            <label className="block text-xs tracking-[0.2em] uppercase text-muted-foreground mb-2">
-              Year
-            </label>
+            <label className={labelClass}>Year</label>
             <input
               type="number"
               value={form.year}
               onChange={(e) => update("year", parseInt(e.target.value))}
-              className="w-full px-4 py-3 bg-transparent border border-border text-foreground text-sm focus:border-foreground focus:outline-none transition-colors"
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label className="block text-xs tracking-[0.2em] uppercase text-muted-foreground mb-2">
-              Series
-            </label>
+            <label className={labelClass}>Series</label>
             <select
               value={form.category}
               onChange={(e) => update("category", e.target.value as PaintingCategory)}
-              className="w-full px-4 py-3 bg-transparent border border-border text-foreground text-sm focus:border-foreground focus:outline-none transition-colors"
+              className={inputClass}
             >
               <option value="swirl">Swirl Series</option>
               <option value="bug">Bug Series</option>
@@ -344,70 +417,60 @@ function PaintingFormModal({
           </div>
 
           <div>
-            <label className="block text-xs tracking-[0.2em] uppercase text-muted-foreground mb-2">
-              Medium
-            </label>
+            <label className={labelClass}>Medium</label>
             <input
               type="text"
               value={form.medium}
               onChange={(e) => update("medium", e.target.value)}
-              className="w-full px-4 py-3 bg-transparent border border-border text-foreground text-sm focus:border-foreground focus:outline-none transition-colors"
+              className={inputClass}
+              placeholder="e.g., Oil on Canvas"
             />
           </div>
 
           <div>
-            <label className="block text-xs tracking-[0.2em] uppercase text-muted-foreground mb-2">
-              Dimensions
-            </label>
+            <label className={labelClass}>Dimensions</label>
             <input
               type="text"
               value={form.dimensions}
               onChange={(e) => update("dimensions", e.target.value)}
-              className="w-full px-4 py-3 bg-transparent border border-border text-foreground text-sm focus:border-foreground focus:outline-none transition-colors"
+              className={inputClass}
               placeholder='e.g., 36" x 48"'
             />
           </div>
 
           <div>
-            <label className="block text-xs tracking-[0.2em] uppercase text-muted-foreground mb-2">
-              Price (USD)
-            </label>
+            <label className={labelClass}>Price (USD)</label>
             <input
               type="number"
               value={form.price}
               onChange={(e) => update("price", parseFloat(e.target.value))}
-              className="w-full px-4 py-3 bg-transparent border border-border text-foreground text-sm focus:border-foreground focus:outline-none transition-colors"
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label className="block text-xs tracking-[0.2em] uppercase text-muted-foreground mb-2">
-              Sort Order
-            </label>
+            <label className={labelClass}>Sort Order</label>
             <input
               type="number"
               value={form.sort_order}
               onChange={(e) => update("sort_order", parseInt(e.target.value))}
-              className="w-full px-4 py-3 bg-transparent border border-border text-foreground text-sm focus:border-foreground focus:outline-none transition-colors"
+              className={inputClass}
             />
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-xs tracking-[0.2em] uppercase text-muted-foreground mb-2">
-              Description
-            </label>
+            <label className={labelClass}>Description</label>
             <textarea
               value={form.description}
               onChange={(e) => update("description", e.target.value)}
               rows={3}
-              className="w-full px-4 py-3 bg-transparent border border-border text-foreground text-sm focus:border-foreground focus:outline-none transition-colors resize-none"
+              className={`${inputClass} resize-none`}
+              placeholder="Describe the artwork..."
             />
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-xs tracking-[0.2em] uppercase text-muted-foreground mb-2">
-              Image (upload)
-            </label>
+            <label className={labelClass}>Image (upload)</label>
             <div className="flex flex-col sm:flex-row gap-4 items-start">
               <input
                 type="file"
@@ -427,10 +490,10 @@ function PaintingFormModal({
                   reader.readAsDataURL(file)
                   e.target.value = ""
                 }}
-                className="block w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-foreground file:text-background file:text-xs file:font-medium hover:file:opacity-90 cursor-pointer"
+                className="block w-full text-sm text-foreground file:mr-4 file:py-2.5 file:px-5 file:rounded-sm file:border-0 file:bg-foreground file:text-background file:text-xs file:tracking-[0.2em] file:uppercase file:font-medium hover:file:opacity-90 cursor-pointer transition-opacity"
               />
               <p className="text-xs text-muted-foreground">
-                JPEG, PNG or WebP. Max 2MB. Stored in database.
+                JPEG, PNG or WebP. Max 2MB.
               </p>
             </div>
           </div>
@@ -441,7 +504,7 @@ function PaintingFormModal({
                 type="checkbox"
                 checked={form.sold}
                 onChange={(e) => update("sold", e.target.checked)}
-                className="w-4 h-4 accent-accent"
+                className="w-4 h-4 accent-accent rounded"
               />
               <span className="text-xs tracking-[0.2em] uppercase text-muted-foreground">
                 Mark as Sold
@@ -452,30 +515,37 @@ function PaintingFormModal({
 
         {/* Preview */}
         {form.image && (
-          <div className="mt-6">
-            <div className="relative w-48 h-60 overflow-hidden bg-muted border border-border">
-              <PaintingImage src={form.image} alt="Preview" fill className="object-cover" sizes="192px" />
+          <div className="mt-8">
+            <p className={labelClass}>Preview</p>
+            <div className="relative w-48 h-60 overflow-hidden bg-muted border-2 border-border">
+              <PaintingImage
+                src={form.image}
+                alt="Preview"
+                fill
+                className="object-cover"
+                sizes="192px"
+              />
             </div>
           </div>
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-4 mt-8 pt-6 border-t border-border">
+        <div className="flex flex-wrap items-center gap-4 mt-10 pt-8 border-t border-border">
           <button
             onClick={() => onSave(form)}
             disabled={saving || !form.title || !form.image}
-            className="px-6 py-3 bg-foreground text-background text-xs tracking-wider uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="btn-artistic px-6 py-3.5 bg-foreground text-background text-xs tracking-[0.2em] uppercase font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
           >
             {saving ? "Saving..." : isCreating ? "Create Painting" : "Save Changes"}
           </button>
           <button
             onClick={onClose}
-            className="px-6 py-3 border border-border text-muted-foreground text-xs tracking-wider uppercase hover:border-foreground hover:text-foreground transition-all"
+            className="px-6 py-3.5 border-2 border-border text-muted-foreground text-xs tracking-[0.2em] uppercase hover:border-foreground hover:text-foreground transition-all duration-300"
           >
             Cancel
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
