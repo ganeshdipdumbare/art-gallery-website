@@ -115,7 +115,7 @@ export function Hero() {
             href="#gallery"
             className="btn-artistic inline-flex items-center justify-center gap-3 text-sm tracking-[0.2em] uppercase text-foreground border-2 border-foreground px-6 sm:px-8 py-4 hover:bg-foreground hover:text-background"
           >
-            View Collection
+            Enter the Gallery
           </a>
         </motion.div>
       </div>

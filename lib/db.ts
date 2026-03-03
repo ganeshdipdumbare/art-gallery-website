@@ -134,6 +134,45 @@ export async function getAllPaintings(): Promise<PaintingRow[]> {
   return result.rows.map((r) => rowToPainting(r as Record<string, unknown>))
 }
 
+export interface PaginatedPaintingsResult {
+  paintings: PaintingRow[]
+  total: number
+  hasMore: boolean
+}
+
+export async function getPaintingsPaginated(
+  options: { category?: string; page?: number; limit?: number }
+): Promise<PaginatedPaintingsResult> {
+  await initDb()
+  const db = getClient()
+  const { category, page = 1, limit = 8 } = options
+
+  const whereClause = category ? "WHERE category = ?" : ""
+  const args = category ? [category] : []
+
+  const countResult = await db.execute({
+    sql: `SELECT COUNT(*) as count FROM paintings ${whereClause}`,
+    args,
+  })
+  const total = (countResult.rows[0] as { count: number }).count
+
+  const offset = (page - 1) * limit
+  const paintingsResult = await db.execute({
+    sql: `SELECT * FROM paintings ${whereClause} ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?`,
+    args: [...args, limit, offset],
+  })
+
+  const paintings = paintingsResult.rows.map((r) =>
+    rowToPainting(r as Record<string, unknown>)
+  )
+
+  return {
+    paintings,
+    total,
+    hasMore: offset + paintings.length < total,
+  }
+}
+
 export async function getPaintingById(
   id: string
 ): Promise<PaintingRow | undefined> {

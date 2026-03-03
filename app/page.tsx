@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { CartProvider } from "@/lib/cart-context"
 import { Navigation } from "@/components/navigation"
 import { Hero } from "@/components/hero"
@@ -15,7 +16,9 @@ export default function Home() {
         <Navigation />
         <Hero />
         <MarqueeBanner />
-        <Gallery />
+        <Suspense fallback={<div className="min-h-[60vh] bg-muted/30 animate-pulse" />}>
+          <Gallery />
+        </Suspense>
         <About />
         <Contact />
         <Footer />
