@@ -2,18 +2,33 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { PaintingImage } from "./painting-image"
 import { ScrollReveal } from "./scroll-reveal"
 import { PaintingModal } from "./painting-modal"
 import { PAINTING_CATEGORIES, type PaintingRow } from "@/lib/painting-types"
 
 const categories = ["all", ...PAINTING_CATEGORIES] as const
+const ITEMS_PER_PAGE = 6
+
+function getPageNumbers(current: number, total: number): (number | "ellipsis")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  const pages: (number | "ellipsis")[] = [1]
+  if (current > 3) pages.push("ellipsis")
+  for (let p = Math.max(2, current - 1); p <= Math.min(total - 1, current + 1); p++) {
+    pages.push(p)
+  }
+  if (current < total - 2) pages.push("ellipsis")
+  pages.push(total)
+  return pages
+}
 
 export function Gallery() {
   const [activeCategory, setActiveCategory] = useState<string>("all")
   const [selectedPainting, setSelectedPainting] = useState<PaintingRow | null>(null)
   const [paintings, setPaintings] = useState<PaintingRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     fetch("/api/paintings")
@@ -29,6 +44,23 @@ export function Gallery() {
     activeCategory === "all"
       ? paintings
       : paintings.filter((p) => p.category === activeCategory)
+
+  const totalPages = Math.max(1, Math.ceil(filteredPaintings.length / ITEMS_PER_PAGE))
+  const paginatedPaintings = filteredPaintings.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  )
+
+  function handleCategoryChange(cat: string) {
+    setActiveCategory(cat)
+    setCurrentPage(1)
+  }
+
+  function goToPage(page: number) {
+    if (page < 1 || page > totalPages) return
+    setCurrentPage(page)
+    document.getElementById("gallery")?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
 
   return (
     <>
@@ -53,7 +85,7 @@ export function Gallery() {
                 {categories.map((cat) => (
                   <button
                     key={cat}
-                    onClick={() => setActiveCategory(cat)}
+                    onClick={() => handleCategoryChange(cat)}
                     className={`px-4 py-2.5 text-xs tracking-[0.2em] uppercase transition-all duration-300 border flex-shrink-0 ${
                       activeCategory === cat
                         ? "bg-foreground text-background border-foreground"
@@ -88,112 +120,163 @@ export function Gallery() {
 
             {/* Gallery Grid */}
             {!loading && (
-              <motion.div
-                layout
-                className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8"
-              >
-                <AnimatePresence mode="popLayout">
-                  {filteredPaintings.map((painting, index) => (
-                    <motion.div
-                      key={painting.id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{
-                        duration: 0.5,
-                        delay: index * 0.08,
-                        layout: { duration: 0.4 },
-                      }}
-                      className={`${index === 0 || index === 5 ? "md:col-span-2" : ""}`}
-                    >
-                      <button
-                        onClick={() => setSelectedPainting(painting)}
-                        className="painting-card group relative w-full overflow-hidden cursor-pointer text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+              <>
+                <motion.div layout className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                  <AnimatePresence mode="popLayout">
+                    {paginatedPaintings.map((painting, index) => (
+                      <motion.div
+                        key={painting.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{
+                          duration: 0.5,
+                          delay: index * 0.08,
+                          layout: { duration: 0.4 },
+                        }}
+                        className={`${index === 0 || index === 5 ? "md:col-span-2" : ""}`}
                       >
-                        <div
-                          className={`painting-frame relative ${
-                            index === 0 || index === 5
-                              ? "aspect-[21/9]"
-                              : "aspect-[4/5]"
-                          } overflow-hidden`}
+                        <button
+                          onClick={() => setSelectedPainting(painting)}
+                          className="painting-card group relative w-full overflow-hidden cursor-pointer text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
                         >
-                          <PaintingImage
-                            src={painting.image || "/placeholder.svg"}
-                            alt={painting.title}
-                            fill
-                            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 50vw"
-                          />
+                          <div
+                            className={`painting-frame relative ${
+                              index === 0 || index === 5 ? "aspect-[21/9]" : "aspect-[4/5]"
+                            } overflow-hidden`}
+                          >
+                            <PaintingImage
+                              src={painting.image || "/placeholder.svg"}
+                              alt={painting.title}
+                              fill
+                              className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 50vw"
+                            />
 
-                          {/* Hover overlay content */}
-                          <div className="absolute inset-0 z-10 flex flex-col justify-end p-6 md:p-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                            <p className="text-sm tracking-[0.2em] uppercase text-background/70 mb-2">
-                              {painting.medium}
-                            </p>
-                            <h3 className="font-serif text-2xl md:text-3xl text-background">
-                              {painting.title}
-                            </h3>
-                            <div className="flex items-center gap-4 mt-3">
-                              <span className="text-sm text-background/70">
-                                {painting.year}
-                              </span>
-                              <span className="w-8 h-px bg-background/40" />
-                              {painting.sold ? (
-                                <span className="text-xs tracking-[0.2em] uppercase text-background/50">
-                                  Sold
-                                </span>
-                              ) : (
-                                <span className="text-sm text-background/90">
+                            {/* Hover overlay */}
+                            <div className="absolute inset-0 z-10 flex flex-col justify-end p-6 md:p-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                              <p className="text-sm tracking-[0.2em] uppercase text-background/70 mb-2">
+                                {painting.medium}
+                              </p>
+                              <h3 className="font-serif text-2xl md:text-3xl text-background">
+                                {painting.title}
+                              </h3>
+                              <div className="flex items-center gap-4 mt-3">
+                                <span className="text-sm text-background/70">{painting.year}</span>
+                                <span className="w-8 h-px bg-background/40" />
+                                {painting.sold ? (
+                                  <span className="text-xs tracking-[0.2em] uppercase text-background/50">
+                                    Sold
+                                  </span>
+                                ) : (
+                                  <span className="text-sm text-background/90">
+                                    ${painting.price.toLocaleString()}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Sold badge */}
+                            {painting.sold && (
+                              <div className="absolute top-4 right-4 z-10 bg-foreground/90 text-background text-xs tracking-[0.2em] uppercase px-3 py-1.5">
+                                Sold
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Card footer */}
+                          <div className="flex items-center justify-between py-4">
+                            <div>
+                              <h3 className="font-serif text-lg text-foreground">{painting.title}</h3>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {painting.dimensions} &middot; {painting.year}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              {!painting.sold && (
+                                <span className="text-sm text-foreground">
                                   ${painting.price.toLocaleString()}
                                 </span>
                               )}
-                            </div>
-                          </div>
-
-                          {/* Sold badge */}
-                          {painting.sold ? (
-                            <div className="absolute top-4 right-4 z-10 bg-foreground/90 text-background text-xs tracking-[0.2em] uppercase px-3 py-1.5">
-                              Sold
-                            </div>
-                          ) : null}
-                        </div>
-
-                        {/* Card footer */}
-                        <div className="flex items-center justify-between py-4">
-                          <div>
-                            <h3 className="font-serif text-lg text-foreground">
-                              {painting.title}
-                            </h3>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {painting.dimensions} &middot; {painting.year}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            {!painting.sold && (
-                              <span className="text-sm text-foreground">
-                                ${painting.price.toLocaleString()}
+                              <span className="w-8 h-8 flex items-center justify-center border-2 border-border rounded-full group-hover:bg-foreground group-hover:border-foreground group-hover:text-background transition-all duration-500 ease-out">
+                                <svg
+                                  width="12"
+                                  height="12"
+                                  viewBox="0 0 12 12"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.5"
+                                >
+                                  <path d="M1 11L11 1M11 1H3M11 1V9" />
+                                </svg>
                               </span>
-                            )}
-                            <span className="w-8 h-8 flex items-center justify-center border-2 border-border rounded-full group-hover:bg-foreground group-hover:border-foreground group-hover:text-background transition-all duration-500 ease-out">
-                              <svg
-                                width="12"
-                                height="12"
-                                viewBox="0 0 12 12"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                              >
-                                <path d="M1 11L11 1M11 1H3M11 1V9" />
-                              </svg>
-                            </span>
+                            </div>
                           </div>
-                        </div>
+                        </button>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </motion.div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-12 md:mt-16 border-t border-border pt-8">
+                    {/* Result count */}
+                    <p className="text-xs tracking-[0.2em] uppercase text-muted-foreground">
+                      {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
+                      {Math.min(currentPage * ITEMS_PER_PAGE, filteredPaintings.length)} of{" "}
+                      {filteredPaintings.length}
+                    </p>
+
+                    {/* Page controls */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => goToPage(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        aria-label="Previous page"
+                        className="w-9 h-9 flex items-center justify-center border border-border text-muted-foreground hover:border-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none transition-all duration-200"
+                      >
+                        <ChevronLeft size={14} />
                       </button>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </motion.div>
+
+                      {getPageNumbers(currentPage, totalPages).map((p, i) =>
+                        p === "ellipsis" ? (
+                          <span
+                            key={`ellipsis-${i}`}
+                            className="w-9 h-9 flex items-center justify-center text-muted-foreground text-xs"
+                          >
+                            …
+                          </span>
+                        ) : (
+                          <button
+                            key={p}
+                            onClick={() => goToPage(p)}
+                            aria-label={`Page ${p}`}
+                            aria-current={p === currentPage ? "page" : undefined}
+                            className={`w-9 h-9 flex items-center justify-center border text-xs tracking-[0.1em] transition-all duration-200 ${
+                              p === currentPage
+                                ? "bg-foreground text-background border-foreground"
+                                : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        ),
+                      )}
+
+                      <button
+                        onClick={() => goToPage(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        aria-label="Next page"
+                        className="w-9 h-9 flex items-center justify-center border border-border text-muted-foreground hover:border-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none transition-all duration-200"
+                      >
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </ScrollReveal>
