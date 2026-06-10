@@ -7,21 +7,14 @@ import { PaintingImage } from "./painting-image"
 import { ScrollReveal } from "./scroll-reveal"
 import { PaintingModal } from "./painting-modal"
 import { PAINTING_CATEGORIES, type PaintingRow } from "@/lib/painting-types"
+import { getPageNumbers } from "@/lib/pagination"
 
 const categories = ["all", ...PAINTING_CATEGORIES] as const
 const ITEMS_PER_PAGE = 6
-
-function getPageNumbers(current: number, total: number): (number | "ellipsis")[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
-  const pages: (number | "ellipsis")[] = [1]
-  if (current > 3) pages.push("ellipsis")
-  for (let p = Math.max(2, current - 1); p <= Math.min(total - 1, current + 1); p++) {
-    pages.push(p)
-  }
-  if (current < total - 2) pages.push("ellipsis")
-  pages.push(total)
-  return pages
-}
+// Wide-aspect slots are the first and last card on every page.
+// Defined here so changing ITEMS_PER_PAGE automatically updates the layout.
+const WIDE_SLOT_INDICES = new Set([0, ITEMS_PER_PAGE - 1])
+const GALLERY_SECTION_ID = "gallery"
 
 export function Gallery() {
   const [activeCategory, setActiveCategory] = useState<string>("all")
@@ -46,9 +39,16 @@ export function Gallery() {
       : paintings.filter((p) => p.category === activeCategory)
 
   const totalPages = Math.max(1, Math.ceil(filteredPaintings.length / ITEMS_PER_PAGE))
+
+  // Clamp currentPage if totalPages shrinks (e.g. paintings deleted externally).
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages)
+  }, [totalPages, currentPage])
+
+  const safePage = Math.min(currentPage, totalPages)
   const paginatedPaintings = filteredPaintings.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
+    (safePage - 1) * ITEMS_PER_PAGE,
+    safePage * ITEMS_PER_PAGE,
   )
 
   function handleCategoryChange(cat: string) {
@@ -59,12 +59,18 @@ export function Gallery() {
   function goToPage(page: number) {
     if (page < 1 || page > totalPages) return
     setCurrentPage(page)
-    document.getElementById("gallery")?.scrollIntoView({ behavior: "smooth", block: "start" })
+    document.getElementById(GALLERY_SECTION_ID)?.scrollIntoView({ behavior: "smooth", block: "start" })
   }
+
+  // Safe result-count range — guards against a stale safePage after shrinkage.
+  const rangeStart = filteredPaintings.length === 0
+    ? 0
+    : Math.min((safePage - 1) * ITEMS_PER_PAGE + 1, filteredPaintings.length)
+  const rangeEnd = Math.min(safePage * ITEMS_PER_PAGE, filteredPaintings.length)
 
   return (
     <>
-      <section id="gallery" className="py-16 sm:py-24 md:py-32 px-4 sm:px-6 md:px-12 w-full">
+      <section id={GALLERY_SECTION_ID} className="py-16 sm:py-24 md:py-32 px-4 sm:px-6 md:px-12 w-full">
         <ScrollReveal>
           <div className="max-w-7xl mx-auto w-full min-w-0">
             {/* Section Header */}
@@ -123,7 +129,10 @@ export function Gallery() {
               <>
                 <motion.div layout className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                   <AnimatePresence mode="popLayout">
-                    {paginatedPaintings.map((painting, index) => (
+                    {paginatedPaintings.map((painting, index) => {
+                      const absoluteIndex = (safePage - 1) * ITEMS_PER_PAGE + index
+                      const isWide = WIDE_SLOT_INDICES.has(absoluteIndex % ITEMS_PER_PAGE)
+                      return (
                       <motion.div
                         key={painting.id}
                         layout
@@ -135,7 +144,7 @@ export function Gallery() {
                           delay: index * 0.08,
                           layout: { duration: 0.4 },
                         }}
-                        className={`${index === 0 || index === 5 ? "md:col-span-2" : ""}`}
+                        className={`${isWide ? "md:col-span-2" : ""}`}
                       >
                         <button
                           onClick={() => setSelectedPainting(painting)}
@@ -143,7 +152,7 @@ export function Gallery() {
                         >
                           <div
                             className={`painting-frame relative ${
-                              index === 0 || index === 5 ? "aspect-[21/9]" : "aspect-[4/5]"
+                              isWide ? "aspect-[21/9]" : "aspect-[4/5]"
                             } overflow-hidden`}
                           >
                             <PaintingImage
@@ -215,7 +224,7 @@ export function Gallery() {
                           </div>
                         </button>
                       </motion.div>
-                    ))}
+                    )})}
                   </AnimatePresence>
                 </motion.div>
 
@@ -224,9 +233,7 @@ export function Gallery() {
                   <div className="flex items-center justify-between mt-12 md:mt-16 border-t border-border pt-8">
                     {/* Result count */}
                     <p className="text-xs tracking-[0.2em] uppercase text-muted-foreground">
-                      {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
-                      {Math.min(currentPage * ITEMS_PER_PAGE, filteredPaintings.length)} of{" "}
-                      {filteredPaintings.length}
+                      {rangeStart}–{rangeEnd} of {filteredPaintings.length}
                     </p>
 
                     {/* Page controls */}
@@ -240,7 +247,7 @@ export function Gallery() {
                         <ChevronLeft size={14} />
                       </button>
 
-                      {getPageNumbers(currentPage, totalPages).map((p, i) =>
+                      {getPageNumbers(safePage, totalPages).map((p, i) =>
                         p === "ellipsis" ? (
                           <span
                             key={`ellipsis-${i}`}
