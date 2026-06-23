@@ -146,6 +146,11 @@ body {
   color: transparent;
 }
 
+.text-stroke::selection {
+  -webkit-text-stroke: 1.5px oklch(0.22 0.03 45);
+  color: oklch(0.22 0.03 45);
+}
+
 /* Artistic section divider — hand-drawn feel */
 .artistic-divider {
   height: 1px;
