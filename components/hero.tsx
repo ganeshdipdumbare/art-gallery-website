@@ -68,7 +68,7 @@ export function Hero() {
         </motion.p>
 
         {/* Main title */}
-        <div className="overflow-hidden pb-2">
+        <div className="overflow-hidden pb-3">
           <motion.h1
             initial={{ y: 120 }}
             animate={{ y: 0 }}
